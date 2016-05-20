@@ -1,13 +1,12 @@
 # Interesting Tools
 # https://api.twitter.com/oauth/request_token
 
-# import twitter
 import twitter
 import json
 import requests
 import urlparse
-import oauth2
 import datetime
+import oauth2
 
 from datetime import timedelta
 from flask import Flask, request, render_template
@@ -24,9 +23,12 @@ request_token = ""
 
 
 def oauth_login():
+    global access_token
+
     auth = twitter.oauth.OAuth(OAUTH_TOKEN, OAUTH_TOKEN_SECRET, CONSUMER_KEY, CONSUMER_SECRET)
 
-    twitter_api = twitter.Twitter(auth=access_token)
+    #twitter_api = twitter.Twitter(auth=access_token) tenias esto puesto pero da error
+    twitter_api = twitter.Twitter(auth=auth)
     return twitter_api
 
 
@@ -79,6 +81,7 @@ def login2(pin):
     global request_token
     global OAUTH_TOKEN
     global OAUTH_TOKEN_SECRET
+    global access_token
 
     access_token_url='https://api.twitter.com/oauth/access_token'
 
@@ -97,7 +100,8 @@ def login2(pin):
 
 
 def friends():
-    listado = geo(oauth_login(),"ElDesGobiernoDelPP")
+    tag="XMENapocalipsis"
+    listado = geo(oauth_login(),tag)
     l={}
 
     for e in listado:
@@ -124,7 +128,7 @@ def index():
     return render_template('index.html')
 
 @app.route('/twitter/')
-def twitter():
+def twitter_function():
     return login1()
 
 @app.route('/twitter/pin/', methods=['POST'])
