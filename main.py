@@ -25,6 +25,21 @@ request_token = ""
 
 usuarios = set()
 
+def cargarFichero():
+    global usuarios
+
+    f=file("nombres_usuarios", "r")
+    lines=f.read().split()
+    f.close()
+    for line in lines:
+        usuarios.add(line)
+
+def guardarFichero():
+    f=file("nombres_usuarios","w");
+    for u in usuarios:
+        f.write(u+"\n")
+    f.close()
+
 def streamFun():
     # ThingSpeak
     params = urllib.urlencode({'field1': len(usuarios), 'key':'L9TUFV056YFBZKV5'})
@@ -144,11 +159,13 @@ def friends():
         style="height:600px;width:800px;margin:0;"
     )
 
+    guardarFichero()
     # Actualizamos valores de ThingSpeak
     streamFun()
 
     return render_template('mapa.html', mapa=mapa, tag="AMIGOS", listado=listado)
 
+cargarFichero()
 
 app = Flask(__name__)
 GoogleMaps(app)
