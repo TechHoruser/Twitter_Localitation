@@ -46,14 +46,14 @@ def oauth_login():
     twitter_api = twitter.Twitter(auth=auth)
     return twitter_api
 
-def friendlist(tw):
+def friendlist(tw,tweetsamount):
     user = tw.account.verify_credentials()
 
     query = tw.friends.ids(screen_name = user['screen_name'])
     twetts = []
 
     for e in query['ids']:
-        twetts.append(tw.statuses.user_timeline(user_id = e, count = 10))
+        twetts.append(tw.statuses.user_timeline(user_id = e, count = tweetsamount))
 
     
     return geo(twetts)
@@ -102,7 +102,7 @@ def login1():
     return render_template('twitter.html', url=url)
 
 
-def login2(pin):
+def login2(pin,tweetsamount):
     global consumer
     global request_token
     global OAUTH_TOKEN
@@ -122,13 +122,13 @@ def login2(pin):
     OAUTH_TOKEN = access_token["oauth_token"]
     OAUTH_TOKEN_SECRET = access_token["oauth_token_secret"]
 
-    return friends()
+    return friends(tweetsamount)
 
 
-def friends():
+def friends(tweetsamount):
     global usuarios
 
-    listado = friendlist(oauth_login())
+    listado = friendlist(oauth_login(),tweetsamount)
     l={}
 
     for e in listado:
@@ -163,7 +163,7 @@ def twitter_function():
 
 @app.route('/twitter/pin/', methods=['POST'])
 def twitterpin():
-    return login2(request.form['pin'])
+    return login2(request.form['pin'],request.form['tweetsamount'])
 
 @app.route('/twitter/ruta/', methods=['POST'])
 def twitteruta():
@@ -174,4 +174,4 @@ def twitteruta():
     return redirect(uri)
 
 if __name__ == "__main__":
-    app.run(host='192.168.1.101',debug=True)
+    app.run(debug=True)
