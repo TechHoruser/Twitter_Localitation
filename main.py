@@ -7,9 +7,11 @@ import requests
 import urlparse
 import datetime
 import oauth2
+import re
+import httplib, urllib
 
 from datetime import timedelta
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, redirect
 from flask.ext.googlemaps import GoogleMaps
 from flask.ext.googlemaps import Map
 
@@ -17,41 +19,65 @@ CONSUMER_KEY='OLDLHqzjpVgOndpKVOlv2Wt23'
 CONSUMER_SECRET='y5q0NHmRRiTZZrcWcTnCgIiXBsU29FGUC2cqtcYGca9eADFZrk'
 OAUTH_TOKEN = ""
 OAUTH_TOKEN_SECRET = ""
-    
+
 consumer = ""
 request_token = ""
 
+usuarios = set()
+
+def streamFun():
+    # ThingSpeak
+    params = urllib.urlencode({'field1': len(usuarios), 'key':'L9TUFV056YFBZKV5'})
+    headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
+    conn = httplib.HTTPConnection("api.thingspeak.com:80")
+    conn.request("POST", "/update", params, headers)
+    response = conn.getresponse()
+    print "Thingspeak - ", response.status, response.reason
+
+    data = response.read()
+    conn.close()
 
 def oauth_login():
     global access_token
+    global api
 
     auth = twitter.oauth.OAuth(OAUTH_TOKEN, OAUTH_TOKEN_SECRET, CONSUMER_KEY, CONSUMER_SECRET)
-
     #twitter_api = twitter.Twitter(auth=access_token) tenias esto puesto pero da error
     twitter_api = twitter.Twitter(auth=auth)
     return twitter_api
 
+def friendlist(tw):
+    user = tw.account.verify_credentials()
 
-def geo(tw,ht):
-    query = tw.search.tweets(q=('#'+ht),count=100)
+    query = tw.friends.ids(screen_name = user['screen_name'])
+    twetts = []
+
+    for e in query['ids']:
+        twetts.append(tw.statuses.user_timeline(user_id = e, count = 10))
+
     
+    return geo(twetts)
+
+def geo(lista):
     listado=[]
     
-    for resultado in query["statuses"]:
-        # only process a result if it has a geolocation
-        if resultado["place"]:
-            #(resultado["place"]["bounding_box"]["coordinates"][0])
-            momento = datetime.datetime.strptime(resultado["created_at"], '%a %b %d %H:%M:%S +0000 %Y') + timedelta(hours=1)
-            latitud = 0
-            longitud = 0
-            for e in resultado["place"]["bounding_box"]["coordinates"][0]:
-                latitud += e[0]
-                longitud += e[1]
-            latitud = latitud/len(resultado["place"]["bounding_box"]["coordinates"][0])
-            longitud = longitud/len(resultado["place"]["bounding_box"]["coordinates"][0])
-            
-            momento = momento + datetime.timedelta(hours=1)
-            listado.append({"id":resultado["id"], "lugar" : resultado["place"]["full_name"], "momento" : momento, "latitud" : latitud, "longitud" : longitud, "usuario":resultado["user"]})
+    for resultado2 in lista:
+        for resultado in resultado2:
+            # only process a result if it has a geolocation
+            if resultado["place"]:
+                #(resultado["place"]["bounding_box"]["coordinates"][0])
+                momento = datetime.datetime.strptime(resultado["created_at"], '%a %b %d %H:%M:%S +0000 %Y') + timedelta(hours=1)
+                latitud = 0
+                longitud = 0
+                for e in resultado["place"]["bounding_box"]["coordinates"][0]:
+                    latitud += e[0]
+                    longitud += e[1]
+                latitud = latitud/len(resultado["place"]["bounding_box"]["coordinates"][0])
+                longitud = longitud/len(resultado["place"]["bounding_box"]["coordinates"][0])
+                
+                momento = momento + datetime.timedelta(hours=1)
+                listado.append({"id":resultado["id"], "lugar" : resultado["place"]["full_name"], "momento" : momento, "latitud" : latitud, "longitud" : longitud, "usuario":resultado["user"]})
+                break
             
     return listado
 
@@ -100,11 +126,13 @@ def login2(pin):
 
 
 def friends():
-    tag="XMENapocalipsis"
-    listado = geo(oauth_login(),tag)
+    global usuarios
+
+    listado = friendlist(oauth_login())
     l={}
 
     for e in listado:
+        usuarios.add(e['usuario']['screen_name'])
         l.update({e['usuario']['profile_image_url']:[(e['longitud'],e['latitud'])]})
 
     mapa = Map(
@@ -116,8 +144,10 @@ def friends():
         style="height:600px;width:800px;margin:0;"
     )
 
-    return render_template('mapa.html', mapa=mapa, tag=tag, listado=listado)
+    # Actualizamos valores de ThingSpeak
+    streamFun()
 
+    return render_template('mapa.html', mapa=mapa, tag="AMIGOS", listado=listado)
 
 
 app = Flask(__name__)
@@ -135,5 +165,13 @@ def twitter_function():
 def twitterpin():
     return login2(request.form['pin'])
 
+@app.route('/twitter/ruta/', methods=['POST'])
+def twitteruta():
+    option = request.form['marca']
+    expresion = re.compile('Longitud: (.*)? Latitud: (.*)?')
+    g = expresion.findall(option)
+    uri = "https://www.google.es/maps/dir//"+g[0][0]+","+g[0][1]
+    return redirect(uri)
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='192.168.1.101',debug=True)

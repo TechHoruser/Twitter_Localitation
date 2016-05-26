@@ -8,26 +8,35 @@
         <div width=800 height=600>{{mapa.html}}</div>
     </div>
     <div id="listado" class="derecha" width=400>
-        <h1>#{{tag}}</h1>
+        <h1 class="centrado">{{tag}}</h1>
 
-        {% for twits in listado %}
-        <div class="centrado">
-            <img src="{{twits['usuario']['profile_image_url']}}" alt="{{twits['usuario']['screen_name']}}">
-            <h3>{{twits['usuario']['screen_name']}}</h3>
-        </div>
-        <div>
-            <ul>
-                <li>Lugar: {{twits['lugar']}}</li>
-                <li>Momento: {{twits['momento']}}</li>
-                <li>Coordenadas:
+        
+        <form action="/twitter/ruta/" method="POST">
+            {% for twits in listado %}
+            <input type="radio" name="marca" value="Longitud: {{twits['longitud']}} Latitud: {{twits['latitud']}}">
+                <label class="user">
+                <div class="centrado">
+                    <img src="{{twits['usuario']['profile_image_url']}}" alt="{{twits['usuario']['screen_name']}}">
+                    <h3>{{twits['usuario']['screen_name']}}</h3>
+                </div>
+                <div>
                     <ul>
-                        <li>Longitud: {{twits['longitud']}}</li>
-                        <li>Latitud: {{twits['latitud']}}</li>
+                        <li>Lugar: {{twits['lugar']}}</li>
+                        <li>Momento: {{twits['momento']}}</li>
+                        <li>Coordenadas:
+                            <ul>
+                                <li>Longitud: {{twits['longitud']}}</li>
+                                <li>Latitud: {{twits['latitud']}}</li>
+                            </ul>
+                        </li>
                     </ul>
-                </li>
-            </ul>
-        </div>
-        {% endfor %}
+                </div>
+            </label>
+            {% endfor %}
+            
+            <input id="llegar" type="submit" value="¿Cómo llegar?">
+        </form>
+        
     </div>
 </body>
 </hmtl>
