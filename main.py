@@ -8,6 +8,7 @@ import urlparse
 import datetime
 import oauth2
 import re
+import sys
 import httplib, urllib
 
 from datetime import timedelta
@@ -66,6 +67,9 @@ def friendlist(tw,tweetsamount):
 
     query = tw.friends.ids(screen_name = user['screen_name'])
     twetts = []
+
+    if tweetsamount > 100:
+        tweetsamount = 100
 
     for e in query['ids']:
         twetts.append(tw.statuses.user_timeline(user_id = e, count = tweetsamount))
@@ -191,4 +195,7 @@ def twitteruta():
     return redirect(uri)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    if len(sys.argv) == 1:
+        app.run(debug=True, host="localhost")
+    else:
+        app.run(debug=True, host=sys.argv[1])
