@@ -71,8 +71,13 @@ def friendlist(tw,tweetsamount):
     if tweetsamount > 100:
         tweetsamount = 100
 
+    print "----------------\n\nObteniendo tweets de los amigos..."
+    numAmigo = 1
     for e in query['ids']:
+        print ("Amigo: " + str(numAmigo) + "/" + str(len(query['ids'])))
+        numAmigo += 1
         twetts.append(tw.statuses.user_timeline(user_id = e, count = tweetsamount))
+    print "Tweets obtenidos\n\n----------------"
 
     
     return geo(twetts)
@@ -196,6 +201,6 @@ def twitteruta():
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        app.run(debug=True, host="localhost")
+        app.run(port=5002,debug=True, host="localhost")
     else:
-        app.run(debug=True, host=sys.argv[1])
+        app.run(port=5002,debug=True, host=sys.argv[1])
